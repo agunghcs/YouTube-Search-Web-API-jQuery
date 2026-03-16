@@ -1,0 +1,244 @@
+<html>
+    <head>
+        <title>YouTube Search Data Webpage</title>
+        <style>
+            /* Global styling */
+            body {
+                font-family: 'Roboto', sans-serif;
+                background-color: #f4f4f4;
+                margin: 0;
+                padding: 0;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                height: 100vh;
+            }
+
+            .container {
+                width: 95%;
+                max-width: 600px;
+                background-color: white;
+                border-radius: 16px;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+                padding: 20px;
+                margin-top: 20px;
+            }
+
+            h1 {
+                text-align: center;
+                color: #FF0000;
+                font-size: 24px;
+                margin-bottom: 20px;
+            }
+
+            h3 {
+                text-align: center;
+                margin-bottom: 20px;
+                font-size: 18px;
+                color: #333;
+            }
+
+            /* Styling search bar */
+            #search {
+                width: 100%;
+                padding: 14px;
+                font-size: 18px;
+                border: 1px solid #ddd;
+                border-radius: 30px;
+                margin-bottom: 20px;
+                background-color: #f9f9f9;
+            }
+
+            /* Styling search button */
+            #searchButton {
+                width: 100%;
+                padding: 15px;
+                font-size: 18px;
+                background-color: #FF0000;
+                color: white;
+                border: none;
+                border-radius: 30px;
+                cursor: pointer;
+                transition: background-color 0.3s ease;
+            }
+
+            #searchButton:hover {
+                background-color: #cc0000;
+            }
+
+            /* Styling for video navigation buttons */
+            .buttonOptions {
+                display: flex;
+                justify-content: space-between;
+                margin-top: 20px;
+            }
+
+            .tokenClass {
+                width: 48%;
+                background-color: #04AA6D;
+                color: white;
+                padding: 15px 30px;
+                font-size: 16px;
+                border: none;
+                border-radius: 30px;
+                cursor: pointer;
+                transition: background-color 0.3s ease;
+            }
+
+            .tokenClass:hover {
+                background-color: #037C4D;
+            }
+
+            /* Video grid */
+            #output {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+                gap: 15px;
+                margin-top: 30px;
+            }
+
+            /* Video card styling */
+            .video-container {
+                background-color: #fff;
+                border-radius: 16px;
+                padding: 15px;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+                cursor: pointer;
+                transition: transform 0.3s ease;
+            }
+
+            .video-container:hover {
+                transform: scale(1.05);
+            }
+
+            .video-container img {
+                width: 100%;
+                height: auto;
+                border-radius: 12px;
+            }
+
+            .video-container .title {
+                margin-top: 10px;
+                font-size: 16px;
+                font-weight: bold;
+                color: #333;
+                text-align: center;
+            }
+
+            /* Popup video player */
+            .overlayBg {
+                background-color: rgba(0, 0, 0, 0.7);
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                display: none;
+                z-index: 1000;
+            }
+
+            .popup {
+                background-color: black;
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                width: 90%;
+                max-width: 800px;
+                z-index: 1001;
+                border-radius: 16px;
+                overflow: hidden;
+                display: none;
+            }
+
+            .popup iframe {
+                width: 100%;
+                height: 450px;
+                border: none;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>YouTube Video Finder</h1>
+            <h3>What videos do you want to find?</h3>
+            <input type="text" name="search" id="search" placeholder="Search for videos...">
+            <input type="button" value="Search" id="searchButton">
+            
+            <div class="buttonOptions">
+                <input type="button" class="tokenClass" value="Previous">
+                <input type="button" class="tokenClass" value="Next">
+            </div>
+
+            <div id="output"></div>
+        </div>
+
+        <div class="overlayBg"></div>
+        <div class="popup">
+            <iframe src="" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+        </div>
+
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+        <script>
+            var pageToken = {};
+
+            $(document).ready(function() {
+                $('.popup').hide();
+                $('.overlayBg').hide();
+
+                $('#searchButton').click(function() {
+                    searchYoutube();
+                });
+
+                $('.tokenClass').click(function() {
+                    pageToken.current = $(this).val() === 'Next' ? pageToken.nextPage : pageToken.prevPage;
+                    searchYoutube();
+                });
+
+                $('.overlayBg').click(function() {
+                    $('.popup').hide();
+                    $('.overlayBg').hide();
+                });
+
+                $('#output').on('click', '.thumbnail', function() {
+                    $('.popup').show();
+                    $('.overlayBg').show();
+                    $(window).scrollTop(0);
+                    $('.popup iframe').attr('src', 'https://www.youtube.com/embed/' + $(this).attr('videoID'));
+                });
+            });
+
+            function searchYoutube() {
+                $.ajax({
+                    url: 'https://www.googleapis.com/youtube/v3/search',
+                    dataType: 'json',
+                    type: 'GET',
+                    data: {
+                        key: 'AIzaSyAiXo6gCI9ijydzuLNzVsyrghLy7LNnqSY',  // Ganti dengan API Key Anda
+                        q: $('#search').val(),
+                        part: 'snippet',
+                        maxResults: 6,
+                        pageToken: pageToken.current
+                    },
+                    success: function(data) {
+                        pageToken.nextPage = data.nextPageToken;
+                        pageToken.prevPage = data.prevPageToken;
+                        var html = '';
+                        $.each(data['items'], function(index, value) {
+                            html += '<div class="video-container">';
+                            html += '<img class="thumbnail" src="' + value.snippet.thumbnails.medium.url + '" videoID="' + value.id.videoId + '">';
+                            html += '<div class="title">' + value.snippet.title + '</div>';
+                            html += '</div>';
+                        });
+
+                        $('#output').html(html);
+                    },
+                    error: function(jqXHR, textStatus, errorThrown) {
+                        console.log('Request failed: ' + textStatus + ', ' + errorThrown);
+                    }
+                });
+            }
+        </script>
+    </body>
+</html>
