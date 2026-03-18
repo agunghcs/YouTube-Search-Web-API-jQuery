@@ -1,0 +1,129 @@
+<html>
+    <head>
+        <title>jQuery AJAX Getting Web APIs</title>
+        <style>
+            .popup {
+                background-color: black;
+                position: absolute;
+                border: solid 2px white;
+                z-index: 5000;
+                display: none; /* Sembunyikan popup secara default */
+            }
+            .overlayBg {
+                background-color: #333;
+                opacity: 0.5;
+                position: absolute;
+                z-index: 1000;
+                top: 0px;
+                left: 0px;
+                width: 100%;
+                min-height: 100%;
+                display: none; /* Sembunyikan overlay */
+            }
+            .tokenClass {
+                background-color: #04AA6D; /* Green */
+                color: white;
+                padding: 15px 32px;
+            }
+            .thumbnail {
+                cursor: pointer;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>YouTube Search Data Webpage</h1>
+        <h3>What videos do you want to find?</h3>
+        <input type="text" name="search" id="search">
+        <input type="button" value="Search" id="searchButton">
+        <br><br>
+        <div class="buttonOptions">
+            <input type="button" class="tokenClass" value="Previous">
+            <input type="button" class="tokenClass" value="Next">
+        </div>
+        <div id="output"></div>
+        <div class="overlayBg"></div>
+        <div class="popup">
+            <iframe frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+        </div>
+
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+        <script>
+            var pageToken = {};
+            $(document).ready(function() {
+                $('.popup').hide();
+                $('.overlayBg').hide();
+
+                $('#searchButton').click(function() {
+                    searchYoutube();
+                });
+
+                $('.tokenClass').click(function() {
+                    pageToken.current = $(this).val() === 'Next' ? pageToken.nextPage : pageToken.prevPage;
+                    searchYoutube();
+                });
+
+                $('.overlayBg').click(function() {
+                    $('.popup').hide();
+                    $('.overlayBg').hide();
+                });
+
+                $('#output').on('click', '.thumbnail', function() {
+                    // Ambil posisi thumbnail yang diklik
+                    var thumbnailPosition = $(this).offset();
+                    var thumbnailWidth = $(this).width(); // Ambil lebar thumbnail
+                    var thumbnailHeight = $(this).height(); // Ambil tinggi thumbnail
+
+                    // Menampilkan overlay dan popup
+                    $('.popup').show();
+                    $('.overlayBg').show();
+
+                    // Posisi popup sesuai dengan thumbnail yang diklik
+                    var topPosition = thumbnailPosition.top;
+                    var leftPosition = thumbnailPosition.left;
+
+                    // Pindahkan popup ke posisi tersebut
+                    $('.popup').css({
+                        top: topPosition - 10, // Sesuaikan sedikit ke atas
+                        left: leftPosition,
+                        width: thumbnailWidth, // Sesuaikan lebar dengan thumbnail
+                        height: thumbnailHeight // Sesuaikan tinggi dengan thumbnail
+                    });
+
+                    // Atur src iframe untuk memutar video yang sesuai
+                    $('.popup iframe').attr('src', 'https://www.youtube.com/embed/' + $(this).attr('videoID') + '?autoplay=1');
+                });
+            });
+
+            function searchYoutube() {
+                $.ajax({
+                    url: 'https://www.googleapis.com/youtube/v3/search',
+                    dataType: 'json',
+                    type: 'GET',
+                    data: {
+                        key: 'AIzaSyAiXo6gCI9ijydzuLNzVsyrghLy7LNnqSY',
+                        q: $('#search').val(),
+                        part: 'snippet',
+                        maxResults: 3,
+                        pageToken: pageToken.current
+                    }
+                }).done(function(data) {
+                    pageToken.nextPage = data.nextPageToken;
+                    pageToken.prevPage = data.prevPageToken;
+                    console.log(pageToken);
+
+                    var html = "";
+                    $.each(data['items'], function(index, value) {
+                        html += '<div><div class="title">' + value.snippet.title + '</div>';
+                        html += '<div><div class="url"><a href="https://www.youtube.com/watch?v=' + value.id.videoId +
+                            '" target="_blank">' + value.id.videoId + '</a></div>';
+                        html += '<div><img class="thumbnail" src="' + value.snippet.thumbnails.medium.url +
+                            '" videoID="' + value.id.videoId + '"></div>';
+                        html += '</div>';
+                    });
+
+                    $('#output').html(html);
+                });
+            }
+        </script>
+    </body>
+</html>
